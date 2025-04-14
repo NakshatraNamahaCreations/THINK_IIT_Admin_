@@ -524,7 +524,6 @@ const TestSelection = () => {
       sessionStorage.setItem("sectionMarkingData", JSON.stringify(updated));
     }
 
-    console.log("the selected new subject", value);
 
     // Update the selectedSubject to the chosen value (this ensures it's Math or the correct subject)
     setSelectedSubject(value);
@@ -833,15 +832,15 @@ const TestSelection = () => {
             onClick={async () => {
               setSelectedSubject(subject.subjectName);
 
-              //   const subjectObj = subjects.find((sub) => sub.subjectName === value);
-              //   if (subjectObj) {
-              //     apiServices.fetchChapter(subjectObj._id).then((res) => {
-              //       setChapters((prev) => ({
-              //         ...prev,
-              //         [value]: res,
-              //       }));
-              //     });
-              //   }
+                // const subjectObj = subjects.find((sub) => sub.subjectName === value);
+                // if (subjectObj) {
+                //   apiServices.fetchChapter(subjectObj._id).then((res) => {
+                //     setChapters((prev) => ({
+                //       ...prev,
+                //       [value]: res,
+                //     }));
+                //   });
+                // }
             }}
             endIcon={
               <IconButton
@@ -942,6 +941,8 @@ const TestSelection = () => {
               const subjectObj = subjects.find(
                 (s) => s.subjectName === selectedSubject
               );
+              
+
               if (subjectObj) {
                 const chapterData = await apiServices.fetchChapter(
                   subjectObj._id
@@ -950,7 +951,9 @@ const TestSelection = () => {
                   ...prev,
                   [subjectObj.subjectName]: chapterData,
                 }));
+                console.log("the chapterData",chapterData);
               }
+
 
               if (!subjectObj) {
                 console.warn("Subject not found in subject list");
@@ -961,6 +964,8 @@ const TestSelection = () => {
                 subjectObj._id
               );
 
+              console.log("the chapterResponse",chapterResponse);
+              
               const chapterWithTopics = await Promise.all(
                 chapterResponse.map(async (chapter) => {
                   try {
@@ -1035,7 +1040,7 @@ const TestSelection = () => {
       {selectionType === "Manual" && (
         <ChapterAndTopic
           subjectName={selectedSubject}
-          chapters={chapters[`${activeSectionId}-${selectedSubject}`] || []}
+          chapters={chapters[`${selectedSubject}`] || []}
           onTopicsSelected={handleTopicsSelected}
         />
       )}
