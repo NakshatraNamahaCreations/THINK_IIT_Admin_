@@ -1,0 +1,100 @@
+/* Import Poppins font from Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+body {
+  margin: 0;
+  font-family: 'Poppins';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+/* Optional: Set global styles for headings and text */
+h1, h2, h3, h4, h5, h6, p, span, div ,th,tr,td{
+  font-family: 'Poppins', sans-serif;
+}
+
+.css-8iivxr{
+  padding: 0 !important;
+}
+.css-yd8sa2 {
+  gap:0px !important;
+}
+
+
+
+
+.template-tab {
+  padding-left: 20px;
+}
+.singal-s {
+  color: #0d6efdb8;
+}
+.section-teplate {
+  margin-top: 20px;
+  background-color: #80808078;
+  border-radius: 14px;
+  padding: 17px;
+}
+.nav-tabs .nav-link.active {
+  border-top: 2px solid red !important;
+  color: black !important;
+}
+.css-1wnsr1i {
+  border-radius: 10px !important;
+}
+.fhd {
+  background-color: #8eb6da;
+  padding: 15px;
+  border-radius: 5px;
+}
+.questions-so {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  padding-top: 10px;
+}
+.group-0d {
+  border: 1px solid;
+  border-width: 7px;
+  height: 7px;
+  color: black;
+}
+.choose-m-0 ul {
+  display: flex;
+  justify-content: space-between;
+  list-style: none;
+  padding: 0px;
+}
+.lr-d {
+  padding-right: 10px;
+}
+.multi-choose {
+  padding: 15px 35px;
+  font-size: 15px;
+}
+.roup-0d {
+  border-width: 1px;
+  height: 11px;
+  border: 1px solid;
+  width: 11px;
+  background-color: black;
+  border-radius: 50%;
+}
+.input-det.question-input {
+  margin-top: 20px;
+}
+.all-dif {
+  background-color: cadetblue;
+  padding: 15px;
+  margin-top: 14px;
+  border-radius: 8px;
+}
+
+.custom-mathjax mjx-container[jax="CHTML"][display="true"] {
+  margin: 0.2rem 0 !important; /* Adjust as needed */
+}
