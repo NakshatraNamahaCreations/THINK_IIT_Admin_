@@ -34,6 +34,7 @@ const TestSelection = () => {
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [selectedClass, setSelectedClass] = useState(null);
   const [testDetails, setTestDetails] = useState(null);
+  const [preSelected, setPreselected] = useState([]);
   // const [activeSections, setActiveSections] = useState([]);
 
   const { id } = useParams();
@@ -159,107 +160,15 @@ const TestSelection = () => {
     fetchSubject();
   }, [id]);
 
-  // useEffect(() => {
-  //   const fetchTestDetails = async () => {
-  //     try {
-  //       const response = await testServices.getTestById(id);
-  //       const testData = response.data;
-  //       setTestDetails(testData);
 
-  //       // Variables to hold updated states
-  //       const sectionMarkingData = {};
-  //       const structuredSections = [];
-  //       const updatedChapters = {}; // state for chapters per subject
-  //       let defaultSelectedSubject = null;
-  //       let defaultActiveSectionId = null;
-
-  //       // Loop through each section from the API
-  //       for (const section of testData.sections) {
-  //         const sectionId = section._id;
-  //         structuredSections.push({
-  //           id: sectionId,
-  //           sectionName: section.sectionName,
-  //         });
-
-  //         // Initialize subjectSelections as empty; only fill if question bank is present.
-  //         let subjectSelections = [];
-
-  //         if (
-  //           section.questionBankQuestionId &&
-  //           section.questionBankQuestionId.length > 0
-  //         ) {
-  //           // For this example, take the first subject only (modify if multiple subjects are allowed)
-  //           if (section.subjects && section.subjects.length > 0) {
-  //             const subject = section.subjects[0];
-  //             // Map each chapter so that its topics are available in a property named "topics"
-  //             const chaptersForSubject = subject.chapter.map((chap) => ({
-  //               ...chap,
-  //               topics: chap.topic, // assign the API "topic" array to "topics" field for rendering
-  //             }));
-  //             updatedChapters[subject.subjectName] = chaptersForSubject;
-  //             console.log("chaptersForSubject", chaptersForSubject);
-  //             console.log("subjectSelections", subjectSelections);
-
-  //             subjectSelections.push({
-  //               subjectName: subject.subjectName,
-  //               subjectId: subject.subjectId || "",
-  //               chapter: chaptersForSubject,
-  //             });
-
-  //             // Save chapter data into the chapters state for this subject
-  //             updatedChapters[subject.subjectName] = chaptersForSubject;
-  //             console.log("subjectSelections", subjectSelections);
-
-  //             // Set defaults for subject and section if not already set
-  //             if (!defaultSelectedSubject) {
-  //               defaultSelectedSubject = subject.subjectName;
-  //             }
-  //           }
-  //         }
-
-  //         // Build section marking data from the API values
-  //         sectionMarkingData[sectionId] = {
-  //           subjectSelections,
-  //           classSelections: [localStorage.getItem("selectedClass") || ""],
-  //           questionType: section.questionType || "SCQ",
-  //           positiveMarking: section.marksPerQuestion,
-  //           negativeMarking: section.negativeMarksPerWrongAnswer,
-  //           selectionType: section.questionSelection || "Manual",
-  //           sectionName: section.sectionName,
-  //         };
-
-  //         // Set the first section as the active section by default
-  //         if (!defaultActiveSectionId) {
-  //           defaultActiveSectionId = sectionId;
-  //         }
-  //       }
-
-  //       // Update state variables
-  //       setAllSections(structuredSections);
-  //       setSectionData(sectionMarkingData);
-  //       // setActiveSections(structuredSections.map((sec) => sec.id));
-  //       setChapters(updatedChapters);
-  //       setSelectedSubject(defaultSelectedSubject);
-  //       setActiveSectionId(defaultActiveSectionId);
-
-  //       // Persist the section data to sessionStorage
-  //       sessionStorage.setItem(
-  //         "sectionMarkingData",
-  //         JSON.stringify(sectionMarkingData)
-  //       );
-  //     } catch (error) {
-  //       console.error("Failed to fetch test details", error);
-  //     }
-  //   };
-
-  //   fetchTestDetails();
-  // }, [id]);
   useEffect(() => {
     const fetchTestDetails = async () => {
       try {
         const response = await testServices.getTestById(id);
         let testData = response.data;
+      setPreselected(testData.sections);
 
+      
         if (!testData || !testData.sections || testData.sections.length === 0) {
           console.log("No data found in DB, using fallback from JSON file.");
           testData = testPatterns;
@@ -1042,6 +951,7 @@ const TestSelection = () => {
           subjectName={selectedSubject}
           chapters={chapters[`${selectedSubject}`] || []}
           onTopicsSelected={handleTopicsSelected}
+          preSelected={testDetails?.sections?.find(sec => sec._id === activeSectionId)}
         />
       )}
 

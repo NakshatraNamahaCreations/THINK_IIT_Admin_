@@ -63,12 +63,12 @@ import QuestionUpdate from "./pages/QUestionManagement/QuestionUpdate";
 import Results from "./pages/BatchCreation/Results";
 // import TCreation from "./pages/Tests/TCreation";
 import TCreation from "./pages/Test/TCreation";
-import ReviewPage from "./pages/Tests/ReviewPage";
+import ReviewPage from "./pages/Test/ReviewPage";
 import DefineSyllabus from "./pages/Tests/DefineSyllabus";
 import TestSelection from "./pages/Test/TestSelection";
 import QuestionNumber from "./pages/Tests/QuestionNumber";
 import QuestionForms from "./pages/Tests/QuestionForms";
-import QuestionPages from "./pages/Tests/QuestionPages";
+import QuestionPages from "./pages/Test/QuestionPage";
 import TSummery from "./pages/Test/TSummery";
 
 const App = () => {

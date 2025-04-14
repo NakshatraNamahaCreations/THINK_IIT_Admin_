@@ -84,7 +84,6 @@ const TestHeader = ({
   //   fetchTestDataById(id);
   // }, [id]);
 
-
   const handleTabChange = (event, newIndex) => {
     setActiveIndex(newIndex);
     setActiveSectionId(activeSections[newIndex]);
@@ -109,8 +108,8 @@ const TestHeader = ({
       // Update allSections first
       const updatedSections = [...allSections, newSection];
       setAllSections(updatedSections);
-    navigate(`/test-selection/${id}`);
-      // After allSections is updated, now update active and index
+      navigate(`/test-selection/${id}`);
+ 
       setTimeout(() => {
         setActiveSections((prev) => {
           const newActive = [...prev, newId];
@@ -119,7 +118,7 @@ const TestHeader = ({
           return newActive;
         });
 
-        // Scroll into view after DOM updates
+    
         setTimeout(() => {
           containerRef.current?.scrollTo({
             left: containerRef.current.scrollWidth,

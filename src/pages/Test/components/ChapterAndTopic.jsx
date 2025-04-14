@@ -2,10 +2,12 @@ import React, { useEffect, useState } from "react";
 import { Box, Typography } from "@mui/material";
 import apiServices from "../../../services/apiServices";
 
-const ChapterAndTopic = ({ chapters, subjectName, onTopicsSelected }) => {
+const ChapterAndTopic = ({ chapters, subjectName, onTopicsSelected, preSelected }) => {
   const [selectedTopics, setSelectedTopics] = useState([]);
   const [topicsByChapter, setTopicsByChapter] = useState({});
 
+  console.log("preSelected", preSelected);
+  
   // Load from sessionStorage on mount
   useEffect(() => {
     const saved = sessionStorage.getItem("selectedChapterTopics");
@@ -85,7 +87,24 @@ const ChapterAndTopic = ({ chapters, subjectName, onTopicsSelected }) => {
 
     onTopicsSelected?.(subjectName, selectedChapterList, selectedTopicList);
   }, [selectedTopics, topicsByChapter]);
-
+  useEffect(() => {
+    if (!preSelected || !preSelected.subjects) return;
+  
+    const autoSelected = [];
+  
+    preSelected.subjects.forEach((subject) => {
+      subject.chapter.forEach((chapter) => {
+        const chapterId = chapter._id;
+        chapter.topic.forEach((topic) => {
+          const topicId = topic._id;
+          autoSelected.push(`${chapterId}-${topicId}`);
+        });
+      });
+    });
+  
+    setSelectedTopics(autoSelected);
+  }, [topicsByChapter, preSelected]);
+  
   const isSelected = (chapterId, topicId) =>
     selectedTopics.includes(`${chapterId}-${topicId}`);
 

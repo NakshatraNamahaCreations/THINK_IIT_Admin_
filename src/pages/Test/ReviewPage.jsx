@@ -251,7 +251,7 @@ const ReviewPage = () => {
             className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition w-full md:w-auto"
             onClick={() => navigate(-1)}
           >
-            Back to Questions
+            Back
           </button>
 
           {/* Show Download and Print buttons only in Offline mode
@@ -276,7 +276,7 @@ const ReviewPage = () => {
             className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition w-full md:w-auto"
             onClick={handleSubmit}
           >
-            submit
+            Save
           </button>
         </div>
       </div>
