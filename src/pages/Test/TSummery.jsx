@@ -79,40 +79,49 @@ const SummaryPage = () => {
     try {
       const response = await testServices.getTestById(id);
       const test = response?.data;
-      const testName = test?.testPattern;
       const realSections = test?.sections || [];
-
-      const matchedPattern = patternData.find((p) => p.exam === testName);
+  
+      const matchedPattern = patternData.find((p) => p.exam === test?.testPattern);
       if (!matchedPattern) return;
+      console.log(`Pattern matchedPattern:rrrrr`, matchedPattern);
+      const enrichedSections = matchedPattern.sections.map((patternSection) => {
+        // Log sectionName and its match to debug the issue
+        console.log(`Pattern section:`, patternSection);
 
-      const enrichedSections = matchedPattern.sections.map(
-        (patternSection, index) => {
-          const dbSection =
-            realSections.find(
-              (sec) =>
-                sec.sectionName?.trim()?.toLowerCase() ===
-                patternSection.section?.trim()?.toLowerCase()
-            ) || {};
-          return {
-            ...patternSection,
-            sectionId: dbSection._id || null,
-            questionType: dbSection.questionType || patternSection.questionType,
-            correctAnswerMarks: dbSection.marksPerQuestion || patternSection.CM,
-            negativeMarks:
-              dbSection.negativeMarksPerWrongAnswer || patternSection.NM,
-            maxQuestion:
-              dbSection.numberOfQuestions || patternSection.maxQuestions,
-            minQuestion:
-              dbSection.minQuestionsAnswerable || patternSection.minQuestions,
-            marks: dbSection.marks || patternSection.marks,
-            time: dbSection.testDuration || patternSection.time,
-            subjects:
-              dbSection.subjects?.map((s) => s.subjectName) ||
-              patternSection.subjects,
-          };
+        const dbSection = realSections.find(
+          (sec) =>
+            sec.sectionName?.trim()?.toLowerCase() === patternSection.sectionName?.trim()?.toLowerCase()
+        ) || {}; // Get the real section from DB, fallback if not found
+  
+        console.log(`DB section:`, dbSection);
+  
+        // Ensure that sectionId (_id) is set
+        const sectionId = dbSection._id || null;
+  
+        if (!sectionId) {
+          console.warn(`Missing sectionId for section: ${patternSection.section}`);
         }
-      );
-
+  
+        return {
+          ...patternSection,
+          sectionId: sectionId,  // Set sectionId correctly here
+          questionType: dbSection.questionType || patternSection.queueType,
+          correctAnswerMarks: dbSection.marksPerQuestion || patternSection.CM,
+          negativeMarks: dbSection.negativeMarksPerWrongAnswer || patternSection.NM,
+          maxQuestion: dbSection.numberOfQuestions || patternSection.maxQuestions,
+          minQuestion: dbSection.minQuestionsAnswerable || patternSection.minQuestions,
+          marks: dbSection.marks || patternSection.marks,
+          time: dbSection.testDuration || patternSection.time,
+          subjects: dbSection.subjects?.map((s) => s.subjectName) || patternSection.subjects,
+        };
+      });
+  
+      setSelectedExam({
+        ...matchedPattern,
+        sections: enrichedSections,
+      });
+  
+      // Update user selection data
       const userSelectionFormatted = realSections.map((section) => ({
         section: section.sectionName,
         selectedMax: section.numberOfQuestions || "",
@@ -124,17 +133,15 @@ const SummaryPage = () => {
         subjects: section.subjects.map((s) => s.subjectName).join(", "),
         questionType: section.questionType || "",
       }));
-
-      setSelectedExam({
-        ...matchedPattern,
-        sections: enrichedSections,
-      });
-
+  
       setUserSelectionData(userSelectionFormatted);
+  
     } catch (error) {
       console.error("Error fetching test data:", error);
     }
   };
+  
+  
 
   useEffect(() => {
     setSummaryData1(patternData);
@@ -154,6 +161,8 @@ const SummaryPage = () => {
       for (let i = 0; i < selectedExam.sections.length; i++) {
         const section = selectedExam.sections[i];
         const sectionId = section.sectionId;
+        console.log("sectionId", sectionId);
+        
 
         const updatePayload = {
           marksPerQuestion: userSelectionData[i]?.CM || 0,

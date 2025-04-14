@@ -83,10 +83,7 @@ const TestHeader = ({
   // useEffect(() => {
   //   fetchTestDataById(id);
   // }, [id]);
-  useEffect(() => {
-    console.log("All Sections:", allSections);
-    console.log("Active Sections:", activeSections);
-  }, [allSections, activeSections]);
+
 
   const handleTabChange = (event, newIndex) => {
     setActiveIndex(newIndex);
@@ -112,7 +109,7 @@ const TestHeader = ({
       // Update allSections first
       const updatedSections = [...allSections, newSection];
       setAllSections(updatedSections);
-
+    navigate(`/test-selection/${id}`);
       // After allSections is updated, now update active and index
       setTimeout(() => {
         setActiveSections((prev) => {
