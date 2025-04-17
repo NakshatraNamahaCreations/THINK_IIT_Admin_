@@ -31,7 +31,7 @@ const TestSelection = () => {
   const [allSections, setAllSections] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [chapters, setChapters] = useState({});
-  const [selectedSubject, setSelectedSubject] = useState(null);
+  const [selectedSubject, setSelectedSubject] = useState({});
   const [selectedClass, setSelectedClass] = useState(null);
   const [testDetails, setTestDetails] = useState(null);
   const [preSelected, setPreselected] = useState([]);
@@ -60,6 +60,7 @@ const TestSelection = () => {
       return updated;
     });
   };
+  
 
   // useEffect(() => {
   //   const fromSession = JSON.parse(
@@ -124,7 +125,6 @@ const TestSelection = () => {
         typeof subject === "string" ? subject : subject.subjectName;
       setSelectedSubject(subjectName);
 
-      // ✅ Restore chapters properly
       const chapterData =
         typeof subject === "object" ? subject.chapter || [] : [];
 
@@ -309,39 +309,21 @@ const TestSelection = () => {
     }
   }, [id]);
 
-  // const handleTopicsSelected = (chapterNames, topicNames) => {
-  //   const updatedSection = {
-  //     ...sectionData[activeSectionId],
-  //     chapter: chapterNames,
-  //     topic: topicNames,
-  //   };
 
-  //   const updatedData = {
-  //     ...sectionData,
-  //     [activeSectionId]: updatedSection,
-  //   };
-
-  //   console.log("Saving to sessionStorage:", updatedData);
-  //   sessionStorage.setItem("sectionMarkingData", JSON.stringify(updatedData));
-  // };
-  const handleTopicsSelected = (
-    subjectName,
-    chapterList = [],
-    topicList = []
-  ) => {
+  const handleTopicsSelected = (subjectName, chapterList = [], topicList = []) => {
     const updatedSection = { ...sectionData[activeSectionId] };
     const updatedSubjects = [...(updatedSection.subjectSelections || [])];
-
+  
     const subjectIndex = updatedSubjects.findIndex(
       (s) => s.subjectName === subjectName
     );
-
+  
     if (subjectIndex !== -1) {
       const chapterWithTopics = chapterList.map((chapter) => {
         const topicsForChapter = topicList.filter(
           (t) => t.chapterName === chapter.chapterName
         );
-
+  
         return {
           chapterName: chapter.chapterName,
           topic: topicsForChapter.map((t) => ({
@@ -350,12 +332,12 @@ const TestSelection = () => {
           })),
         };
       });
-
+  
       updatedSubjects[subjectIndex] = {
         ...updatedSubjects[subjectIndex],
         chapter: chapterWithTopics,
       };
-
+  
       const updatedData = {
         ...sectionData,
         [activeSectionId]: {
@@ -363,11 +345,12 @@ const TestSelection = () => {
           subjectSelections: updatedSubjects,
         },
       };
-
+  
       sessionStorage.setItem("sectionMarkingData", JSON.stringify(updatedData));
       setSectionData(updatedData);
     }
   };
+  
   // const handleClassChange = (index, value) => {
   const handleClassChange = (value) => {
     // const updated = [...currentSection.classSelections];
@@ -487,56 +470,72 @@ const TestSelection = () => {
     syncToSessionStorage(updatedSectionData);
   };
 
-  const handleNextClick = async () => {
+  console.log("selectedSubject",selectedSubject);
+
+  const handleNextClick = async () => { 
     try {
-      const sectionData = JSON.parse(
-        sessionStorage.getItem("sectionMarkingData") || "{}"
-      );
+      const sectionData = JSON.parse(sessionStorage.getItem("sectionMarkingData") || "{}");
       const selectedClass = sessionStorage.getItem("selectedClass");
+  
+     
+      const sectionsToSubmit = Object.values(sectionData).map((currentSection) => {
+        const sectionName = currentSection?.sectionName || "New Section";
+   
+        
+        const selectedSubObj = currentSection.subjectSelections.find(
+          (subject) =>
+            subject.subjectName === selectedSubject ||
+            subject.subjectName === selectedSubject?.subjectName
+        );
 
-      // if (!activeSections.includes(activeSectionId)) {
-      //   alert("This section is inactive and won't be saved.");
-      //   return;
-      // }
-
-      const currentSection = sectionData[activeSectionId];
-      const sectionName = currentSection?.sectionName || "New Section";
-
-      const selectedSubObj = currentSection.subjectSelections.find(
-        (subject) =>
-          subject.subjectName === selectedSubject ||
-          subject.subjectName === selectedSubject?.subjectName
-      );
-
-      if (!selectedSubObj) {
-        alert("Please select a subject before proceeding.");
+  
+        if (!selectedSubObj) {
+          alert("Please select a subject before proceeding.");
+          return;
+        }
+  
+        return {
+          sectionName,
+          class: selectedClass,
+          questionType: currentSection.questionType || "SCQ",
+          marksPerQuestion: currentSection.positiveMarking,
+          negativeMarksPerWrongAnswer: currentSection.negativeMarking,
+          questionSelection: currentSection.selectionType || "Manual",
+          subjects: [
+            {
+              subjectName: selectedSubObj.subjectName,
+              subjectId: selectedSubObj._id || selectedSubObj.subjectId || "",
+              chapter: (selectedSubObj.chapter || []).map((chapter) => ({
+                chapterName: chapter.chapterName,
+                topic: (chapter.topic || []).map((topic) => ({
+                  topicName: topic.topicName,
+                  numberOfQuestions: topic.numberOfQuestions || 0,
+                })),
+              })),
+            },
+          ],
+        };
+      });
+  
+      // Filter out any undefined sections
+      const validSections = sectionsToSubmit.filter((section) => section);
+      console.log("Sending these sections:", validSections);
+  
+        
+        console.log("Sections to submit:", sectionsToSubmit);
+        
+console.log("the response response", sectionsToSubmit )
+      const response = await testServices.AddSectionDetails(id, sectionsToSubmit);
+      if (!response || !response.sections) {
+        console.error("Invalid response structure:", response);
         return;
       }
-
-      const requestData = {
-        sectionName,
-        class: selectedClass,
-        questionType: currentSection.questionType || "SCQ",
-        marksPerQuestion: currentSection.positiveMarking,
-        negativeMarksPerWrongAnswer: currentSection.negativeMarking,
-        questionSelection: currentSection.selectionType || "Manual",
-        subjects: [
-          {
-            subjectName: selectedSubObj.subjectName,
-            subjectId: selectedSubObj._id || selectedSubObj.subjectId || "",
-            chapter: (selectedSubObj.chapter || []).map((chapter) => ({
-              chapterName: chapter.chapterName,
-              topic: (chapter.topic || []).map((topic) => ({
-                topicName: topic.topicName,
-                numberOfQuestions: topic.numberOfQuestions || 0,
-              })),
-            })),
-          },
-        ],
-      };
-
-      const response = await testServices.AddSectionDetails(id, requestData);
-      const updatedSections = response;
+      console.log("the response", response);
+      
+      
+      const updatedSections = response.sections;
+      console.log(updatedSections);
+      
       // Only update localStorage if this section is active
       // if (activeSections.includes(activeSectionId)) {
       //   const updatedSections = response;
@@ -549,92 +548,73 @@ const TestSelection = () => {
 
       //   // Save to localStorage
 
-      const realSection = updatedSections.sections.find(
-        (s) =>
-          s.sectionName?.trim()?.toLowerCase() ===
-          sectionName.trim().toLowerCase()
-      );
-      const realSectionId = realSection?._id;
+      // const realSection = updatedSections.sections.find(
+      //   (s) =>
+      //     s.sectionName?.trim()?.toLowerCase() ===
+      //     sectionName.trim().toLowerCase()
+      // );
+      // const realSectionId = realSection?._id;
 
-      if (selectionType === "Auto") {
-        const topics = currentSection.subjectSelections.flatMap((subject) =>
-          (subject.chapter || []).flatMap((chapter) =>
-            (chapter.topic || []).map((topic) => ({
-              topicName: topic.topicName,
-              numberOfQuestions: topic.numberOfQuestions || 0,
-              chapterName: chapter.chapterName,
-            }))
-          )
-        );
-        const localSectionData = JSON.parse(
-          localStorage.getItem(`test-${id}-sections`) || "{}"
-        );
-        localSectionData[realSectionId] = {
-          sectionName,
-          questionType: currentSection.questionType || "SCQ",
-          marksPerQuestion: currentSection.positiveMarking,
-          negativeMarksPerWrongAnswer: currentSection.negativeMarking,
-          questionSelection: currentSection.selectionType || "Manual",
-          subjects: requestData.subjects,
-        };
-        localStorage.setItem(
-          `test-${id}-sections`,
-          JSON.stringify(localSectionData)
-        );
-        const autoPickResponse = await testServices.AutoPickQuestions(id, {
-          sectionId: realSectionId,
-          topics,
-          totalQuestions: topics.reduce(
-            (sum, t) => sum + (t.numberOfQuestions || 0),
-            0
-          ),
-        });
+      // if (selectionType === "Auto") {
+      //   const topics = currentSection.subjectSelections.flatMap((subject) =>
+      //     (subject.chapter || []).flatMap((chapter) =>
+      //       (chapter.topic || []).map((topic) => ({
+      //         topicName: topic.topicName,
+      //         numberOfQuestions: topic.numberOfQuestions || 0,
+      //         chapterName: chapter.chapterName,
+      //       }))
+      //     )
+      //   );
+      //   const localSectionData = JSON.parse(
+      //     localStorage.getItem(`test-${id}-sections`)|| "{}"
+      //   );
+      //   localSectionData[realSectionId] = {
+      //     sectionName,
+      //     questionType: currentSection.questionType || "SCQ",
+      //     marksPerQuestion: currentSection.positiveMarking,
+      //     negativeMarksPerWrongAnswer: currentSection.negativeMarking,
+      //     questionSelection: currentSection.selectionType || "Manual",
+      //     // subjects: requestData.subjects,
+      //   };
+      //   localStorage.setItem(
+      //     `test-${id}-sections`,
+      //     JSON.stringify(localSectionData)
+      //   );
+      //   const autoPickResponse = await testServices.AutoPickQuestions(id, {
+      //     sectionId: realSectionId,
+      //     topics,
+      //     totalQuestions: topics.reduce(
+      //       (sum, t) => sum + (t.numberOfQuestions || 0),
+      //       0
+      //     ),
+      //   });
 
-        if (!autoPickResponse?.success) {
-          alert("Auto pick failed.");
-          return;
-        }
+      //   if (!autoPickResponse?.success) {
+      //     alert("Auto pick failed.");
+      //     return;
+      //   }
 
-        const autoPicked = autoPickResponse.data;
+      //   const autoPicked = autoPickResponse.data;
 
 
-        const existing = JSON.parse(
-          sessionStorage.getItem("AutoPickedQuestions") || "{}"
-        );
-        const updated = { ...existing };
+      //   const existing = JSON.parse(
+      //     sessionStorage.getItem("AutoPickedQuestions") || "{}"
+      //   );
+      //   const updated = { ...existing };
 
-        if (!updated[realSectionId]) updated[realSectionId] = {};
+      //   if (!updated[realSectionId]) updated[realSectionId] = {};
 
-        Object.entries(autoPicked).forEach(([topicName, questionMap]) => {
-          updated[realSectionId][topicName] = {
-            ...(updated[realSectionId][topicName] || {}),
-            ...questionMap,
-          };
-        });
+      //   Object.entries(autoPicked).forEach(([topicName, questionMap]) => {
+      //     updated[realSectionId][topicName] = {
+      //       ...(updated[realSectionId][topicName] || {}),
+      //       ...questionMap,
+      //     };
+      //   });
 
-        sessionStorage.setItem("AutoPickedQuestions", JSON.stringify(updated));
-      }
+      //   sessionStorage.setItem("AutoPickedQuestions", JSON.stringify(updated));
+      // }
 
       alert("Section details saved successfully!");
-      // Update localStorage with the new data
-      // const localSectionData = JSON.parse(
-      //   localStorage.getItem(`test-${id}-sections`) || "{}"
-      // );
-
-      // localSectionData[realSectionId] = {
-      //   sectionName,
-      //   questionType: currentSection.questionType || "SCQ",
-      //   marksPerQuestion: currentSection.positiveMarking,
-      //   negativeMarksPerWrongAnswer: currentSection.negativeMarking,
-      //   questionSelection: currentSection.selectionType || "Manual",
-      //   subjects: requestData.subjects, // with chapters + topics
-      // };
-
-      // localStorage.setItem(
-      //   `test-${id}-sections`,
-      //   JSON.stringify(localSectionData)
-      // );
-      // localStorage.setItem("selectedClass", selectedClass); // persist class
 
       navigate(`/questionPage/${id}`);
     } catch (error) {
@@ -946,6 +926,7 @@ const TestSelection = () => {
           chapters={chapters[`${selectedSubject}`] || []}
           onTopicsSelected={handleTopicsSelected}
           preSelected={testDetails?.sections?.find(sec => sec._id === activeSectionId)}
+          activeSectionId={activeSectionId} 
         />
       )}
 

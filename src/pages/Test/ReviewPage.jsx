@@ -84,7 +84,7 @@ const ReviewPage = () => {
       setSectionQuestions(parsedQuestions);
 
       if (Object.keys(parsedQuestions).length > 0) {
-        setActiveSection(Object.keys(parsedQuestions)[0]); 
+        setActiveSection(Object.keys(parsedQuestions)[0]);
       }
     }
   }, []);
@@ -205,8 +205,6 @@ const ReviewPage = () => {
                         ) : (
                           console.warn(`Missing image for ID: ${imageId}`)
                         )}
-
-
                       </Box>
 
                       <ul className="mt-2 space-y-1">

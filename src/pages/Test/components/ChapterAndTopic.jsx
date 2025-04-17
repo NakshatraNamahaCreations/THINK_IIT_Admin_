@@ -2,26 +2,31 @@ import React, { useEffect, useState } from "react";
 import { Box, Typography } from "@mui/material";
 import apiServices from "../../../services/apiServices";
 
-const ChapterAndTopic = ({ chapters, subjectName, onTopicsSelected, preSelected }) => {
+const ChapterAndTopic = ({
+  chapters,
+  subjectName,
+  onTopicsSelected,
+  preSelected,
+  activeSectionId 
+}) => {
   const [selectedTopics, setSelectedTopics] = useState([]);
   const [topicsByChapter, setTopicsByChapter] = useState({});
 
-  
-  // Load from sessionStorage on mount
   useEffect(() => {
-    const saved = sessionStorage.getItem("selectedChapterTopics");
+    const saved = sessionStorage.getItem(
+      `selectedChapterTopics-${activeSectionId}`
+    );
     if (saved) {
       setSelectedTopics(JSON.parse(saved));
     }
-  }, []);
+  }, [activeSectionId]);
 
-  // Save changes
   useEffect(() => {
     sessionStorage.setItem(
-      "selectedChapterTopics",
+      `selectedChapterTopics-${activeSectionId}`,
       JSON.stringify(selectedTopics)
     );
-  }, [selectedTopics]);
+  }, [selectedTopics, activeSectionId]);
 
   // Fetch topics for all chapters
   useEffect(() => {
@@ -29,7 +34,6 @@ const ChapterAndTopic = ({ chapters, subjectName, onTopicsSelected, preSelected 
       const topicData = {};
 
       for (let chapter of chapters) {
-     
         if (chapter.topic && chapter.topic.length > 0) {
           topicData[chapter._id] = chapter.topic;
         } else if (chapter.topics && chapter.topics.length > 0) {
@@ -62,7 +66,7 @@ const ChapterAndTopic = ({ chapters, subjectName, onTopicsSelected, preSelected 
         : [...prev, uniqueId]
     );
   };
-
+  
   // Callback on topic select
   useEffect(() => {
     const selectedChapterList = [
@@ -72,7 +76,7 @@ const ChapterAndTopic = ({ chapters, subjectName, onTopicsSelected, preSelected 
           .filter(Boolean)
       ),
     ];
-
+  
     const selectedTopicList = selectedTopics
       .map((id) => {
         const [chapterId, topicId] = id.split("-");
@@ -83,14 +87,15 @@ const ChapterAndTopic = ({ chapters, subjectName, onTopicsSelected, preSelected 
         return topic ? { ...topic, chapterName: chapter?.chapterName } : null;
       })
       .filter(Boolean);
-
+  
     onTopicsSelected?.(subjectName, selectedChapterList, selectedTopicList);
-  }, [selectedTopics, topicsByChapter]);
+  }, [selectedTopics, topicsByChapter, chapters, subjectName]);
+  
   useEffect(() => {
     if (!preSelected || !preSelected.subjects) return;
-  
+
     const autoSelected = [];
-  
+
     preSelected.subjects.forEach((subject) => {
       subject.chapter.forEach((chapter) => {
         const chapterId = chapter._id;
@@ -100,13 +105,13 @@ const ChapterAndTopic = ({ chapters, subjectName, onTopicsSelected, preSelected 
         });
       });
     });
-  
+
     setSelectedTopics(autoSelected);
   }, [topicsByChapter, preSelected]);
-  
+
   const isSelected = (chapterId, topicId) =>
     selectedTopics.includes(`${chapterId}-${topicId}`);
-
+  
   return (
     <Box sx={{ padding: 3 }}>
       {chapters.map((chapter, index) => (
@@ -142,7 +147,7 @@ const ChapterAndTopic = ({ chapters, subjectName, onTopicsSelected, preSelected 
                   fontSize: "14px",
                   fontWeight: 500,
                   backgroundColor: isSelected(chapter._id, topic._id)
-                    ? "#1976d2" 
+                    ? "#1976d2"
                     : "#f3f4f6",
                   color: isSelected(chapter._id, topic._id) ? "white" : "#333",
                   border: "1px solid #ccc",

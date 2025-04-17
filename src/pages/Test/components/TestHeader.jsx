@@ -25,7 +25,6 @@ const TestHeader = ({
 
   const navigate = useNavigate();
   const { id } = useParams();
-  console.log(id);
 
   // const fetchTestDataById = async (id) => {
   //   try {
