@@ -45,6 +45,23 @@
         }
       ]
     },
+     {
+      "exam": "New",
+      "sections": [
+        {
+          "sectionName": "A",
+          "subjects": ["Physics"],
+          "questionType": "SCQ",
+          "questions": 180,
+          "correctAnswerMarks": 4,
+          "negativeMarks": -1,
+          "marks":100,
+          "minQuestion":50,
+          "maxQuestion":50,
+          "time":90
+        }
+      ]
+    },
     {
       "exam": "KCET_P 2025",
       "sections": [

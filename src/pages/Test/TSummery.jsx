@@ -12,6 +12,7 @@ const TSummery = () => {
   const [testDetails, setTestDetails] = useState(null);
   const [sectionWiseQuestions, setSectionWiseQuestions] = useState({});
   const [questionSummary, setQuestionSummary] = useState({});
+  const [sectionQuestions, setSectionQuestions] = useState({});
 
   const { id } = useParams();
   const navigate = useNavigate();
@@ -26,9 +27,8 @@ const TSummery = () => {
       const summary = JSON.parse(
         localStorage.getItem("questionSummary") || "{}"
       );
-      console.log("summary summary summary", summary);
 
-      setQuestionSummary(summary); // this will make it available globally
+      setQuestionSummary(summary);
 
       const matchedPattern = patternData.find(
         (p) => p.exam === test?.testPattern
@@ -78,14 +78,14 @@ const TSummery = () => {
 
       const userSelectionFormatted = realSections.map((section) => ({
         section: section.sectionName,
-        selectedMax: section.numberOfQuestions || "",
-        minAnswerable: section.minQuestionsAnswerable || "",
-        marks: section.marks || "",
-        time: section.testDuration || "",
-        CM: section.marksPerQuestion || "",
-        NM: section.negativeMarksPerWrongAnswer || "",
+        selectedMax: section.numberOfQuestions ?? "",
+        minAnswerable: section.minQuestionsAnswerable ?? "",
+        marks: section.marks ?? "",
+        time: section.testDuration ?? "",
+        CM: section.marksPerQuestion ?? "",
+        NM: section.negativeMarksPerWrongAnswer ?? "",
         subjects: section.subjects.map((s) => s.subjectName).join(", "),
-        questionType: section.questionType || "",
+        questionType: section.questionType ?? "",
       }));
 
       setUserSelectionData(userSelectionFormatted);
@@ -97,6 +97,12 @@ const TSummery = () => {
   useEffect(() => {
     setSummaryData1(patternData);
     fetchTestDataById();
+    const storedQuestions = sessionStorage.getItem("questionDetails");
+
+    if (storedQuestions) {
+      const parsedQuestions = JSON.parse(storedQuestions);
+      setSectionQuestions(parsedQuestions);
+    }
   }, []);
 
   const handleChange = (e, field, index) => {
@@ -108,12 +114,98 @@ const TSummery = () => {
   const handleReviewAndGenerate = async () => {
     try {
       if (!selectedExam?.sections?.length) return;
+      // 🔒 Step 0: Validate All Sections Before Any API Call
+      for (let i = 0; i < selectedExam.sections.length; i++) {
+        const section = selectedExam.sections[i];
+        const cmValue = userSelectionData[i]?.CM;
+        const nmValue = userSelectionData[i]?.NM;
+
+        if (cmValue !== "-" && isNaN(Number(cmValue))) {
+          alert(`CM must be a number or "-" in section ${section.sectionName}`);
+          return;
+        }
+        if (!isNaN(Number(nmValue)) && Number(nmValue) > 0) {
+          alert(
+            `NM cannot be a positive number in section ${section.sectionName}`
+          );
+          return;
+        }
+      }
+      const allSections = Object.keys(sectionQuestions);
+
+      const pickedData = JSON.parse(
+        sessionStorage.getItem("questionDetails") || "{}"
+      );
+
+      for (let sectionId of allSections) {
+        const pickedTopics = sectionQuestions[sectionId].pickedTopics;
+        let questionIds = [];
+        console.log("pickedTopics", pickedTopics);
+        Object.keys(pickedTopics).forEach((topicName) => {
+          pickedTopics[topicName].forEach((question) => {
+            if (question._id) {
+              questionIds.push(question._id);
+            }
+          });
+        });
+        if (questionIds.length === 0) {
+          console.warn(`No questions found for section ${sectionId}`);
+          continue;
+        }
+
+        const payload = {
+          questionBankQuestionId: questionIds,
+        };
+
+        const response = await testServices.addQuestionsToSection(
+          id,
+          sectionId,
+          payload
+        );
+
+        if (!response.success) {
+          console.error(
+            `Failed to save section ${sectionId}:`,
+            response.message
+          );
+          alert(`Failed to save section ${sectionId}`);
+          return;
+          return;
+        }
+      }
 
       for (let i = 0; i < selectedExam.sections.length; i++) {
         const section = selectedExam.sections[i];
         const sectionId = section.sectionId;
-        console.log("sectionId", sectionId);
 
+        const cmValue = userSelectionData[i]?.CM;
+        const nmValue = userSelectionData[i]?.NM;
+
+        if (cmValue !== "-" && isNaN(Number(cmValue))) {
+          alert(`CM must be a number or "-" in section ${section.sectionName}`);
+          return;
+        }
+
+        if (!isNaN(Number(nmValue)) && Number(nmValue) > 0) {
+          alert(
+            `NM cannot be a positive number in section ${section.sectionName}`
+          );
+          return;
+        }
+        // Get picked question IDs for this section
+        const pickedTopics = pickedData?.[sectionId]?.pickedTopics || {};
+        const questionIds = Object.values(pickedTopics)
+          .flat()
+          .map((q) => q._id);
+
+        // Step 1: Update selected question IDs
+        if (questionIds?.length) {
+          await testServices.updateSectionMeta(id, sectionId, {
+            questionBankQuestionId: questionIds,
+          });
+        }
+
+        // Step 2: Update metadata
         const updatePayload = {
           marksPerQuestion: userSelectionData[i]?.CM || 0,
           negativeMarksPerWrongAnswer: userSelectionData[i]?.NM || 0,
@@ -122,15 +214,20 @@ const TSummery = () => {
           testDuration: totalTime,
         };
 
+        // await testServices.updateSectionMeta(id, sectionId, updatePayload);
         await testServices.updateSectionMeta(id, sectionId, updatePayload);
       }
 
-      alert("Test metadata saved successfully!");
-      navigate(`/questionReview/${id}`);
+      alert("Test successfully submitted!");
+      navigate(`/TCreation`);
     } catch (error) {
-      console.error("Review/Generate Error:", error);
-      alert("Failed to save data");
+      console.error("Generate Test Error:", error);
+      alert("Something went wrong while submitting the test.");
     }
+  };
+
+  const handlePreview = () => {
+    navigate(`/questionReview/${id}`);
   };
   const getTotalQuestionsPerSubject = () => {
     const totals = {};
@@ -355,38 +452,40 @@ const TSummery = () => {
                 </Grid>
 
                 <Grid item xs={2}>
-  <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-    {(section.subjects?.split(", ") || []).map((subject, i) => {
-      const subjectKey = `${testDetails?.sections?.[sectionIndex]?._id}_${subject}`;
-      const chapters = questionSummary?.[subjectKey];
-      const totalPicked = chapters
-        ? Object.values(chapters).reduce((a, b) => a + b, 0)
-        : 0;
+                  <Box
+                    sx={{ display: "flex", flexDirection: "column", gap: 1 }}
+                  >
+                    {(section.subjects?.split(", ") || []).map((subject, i) => {
+                      const subjectKey = `${testDetails?.sections?.[sectionIndex]?._id}_${subject}`;
+                      const chapters = questionSummary?.[subjectKey];
+                      const totalPicked = chapters
+                        ? Object.values(chapters).reduce((a, b) => a + b, 0)
+                        : 0;
 
-      return (
-        <Grid
-          container
-          key={`subject-${sectionIndex}-${i}`}
-          sx={{ alignItems: "center" }}
-        >
-          <Grid item xs={6}>
-            <Typography variant="body2">{subject}</Typography>
-          </Grid>
-          <Grid item xs={6} sx={{ padding:'0rem 2rem'}}>
-            <Typography variant="body2" textAlign="right">
-              {totalPicked}
-            </Typography>
-          </Grid>
-        </Grid>
-      );
-    })}
-  </Box>
-</Grid>
+                      return (
+                        <Grid
+                          container
+                          key={`subject-${sectionIndex}-${i}`}
+                          sx={{ alignItems: "center" }}
+                        >
+                          <Grid item xs={6}>
+                            <Typography variant="body2">{subject}</Typography>
+                          </Grid>
+                          <Grid item xs={6} sx={{ padding: "0rem 2rem" }}>
+                            <Typography variant="body2" textAlign="right">
+                              {totalPicked}
+                            </Typography>
+                          </Grid>
+                        </Grid>
+                      );
+                    })}
+                  </Box>
+                </Grid>
 
                 <Grid item xs={1}>
                   <TextField
                     fullWidth
-                    value={userSelectionData[sectionIndex]?.CM || "4"}
+                    value={userSelectionData[sectionIndex]?.CM ?? ""}
                     onChange={(e) => handleChange(e, "CM", sectionIndex)}
                     variant="outlined"
                     size="small"
@@ -396,7 +495,7 @@ const TSummery = () => {
                 <Grid item xs={1}>
                   <TextField
                     fullWidth
-                    value={userSelectionData[sectionIndex]?.NM || "-1"}
+                    value={userSelectionData[sectionIndex]?.NM ?? ""}
                     onChange={(e) => handleChange(e, "NM", sectionIndex)}
                     variant="outlined"
                     size="small"
@@ -493,7 +592,7 @@ const TSummery = () => {
               variant="contained"
               color="primary"
               sx={{ fontWeight: "bold" }}
-              onClick={handleReviewAndGenerate}
+              onClick={handlePreview}
             >
               Preview
             </Button>

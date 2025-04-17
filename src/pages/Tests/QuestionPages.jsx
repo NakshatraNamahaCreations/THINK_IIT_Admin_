@@ -220,9 +220,7 @@ const QuestionPages = () => {
             const sessionSection = sectionMarkingData[sectionId] || {};
             // const subjectData = sessionSection.subjectSelections?.[0];
             const subjectData = section.subjects?.[0];
-
-            console.log("the subjectData", subjectData);
-
+            
             const payload = {
               Subject: subjectData?.subjectName || "",
               questionType: section?.questionType || "SCQ",

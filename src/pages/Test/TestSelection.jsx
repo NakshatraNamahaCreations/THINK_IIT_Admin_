@@ -142,10 +142,6 @@ const TestSelection = () => {
     }
   }, [activeSectionId]);
 
-  console.log("Effect Triggered", {
-    activeSectionId,
-    section: sectionData[activeSectionId],
-  });
 
   useEffect(() => {
     const fetchSubject = async () => {
@@ -170,7 +166,6 @@ const TestSelection = () => {
 
       
         if (!testData || !testData.sections || testData.sections.length === 0) {
-          console.log("No data found in DB, using fallback from JSON file.");
           testData = testPatterns;
         }
 
@@ -601,7 +596,7 @@ const TestSelection = () => {
         }
 
         const autoPicked = autoPickResponse.data;
-        console.log("autoPickedautoPicked", autoPicked);
+
 
         const existing = JSON.parse(
           sessionStorage.getItem("AutoPickedQuestions") || "{}"
@@ -860,7 +855,7 @@ const TestSelection = () => {
                   ...prev,
                   [subjectObj.subjectName]: chapterData,
                 }));
-                console.log("the chapterData",chapterData);
+
               }
 
 
@@ -873,7 +868,6 @@ const TestSelection = () => {
                 subjectObj._id
               );
 
-              console.log("the chapterResponse",chapterResponse);
               
               const chapterWithTopics = await Promise.all(
                 chapterResponse.map(async (chapter) => {

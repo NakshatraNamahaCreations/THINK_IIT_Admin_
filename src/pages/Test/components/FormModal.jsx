@@ -127,7 +127,7 @@ const FormModal = ({ isOpen, onClose }) => {
         testPattern: formData.testPattern,
         selectionType: "SELECTION",
       };
-      console.log("the paylaod", transformedSections);
+
 
       const response = await testServices.createAssignment(payload);
       console.log(response);
@@ -179,7 +179,7 @@ const FormModal = ({ isOpen, onClose }) => {
           className="w-full border border-gray-300 px-4 py-2 rounded-md mb-3"
         >
           <option value="">Select Test Pattern</option>
-          <option value="New">New</option>
+      
           {testPatterns.map((item, index) => (
             <option key={index} value={item.exam}>
               {item.exam}

@@ -209,7 +209,6 @@ const QuestionPages = () => {
         if (!response.success || !response.data) return;
 
         const testData = response.data;
-        console.log("thes testData", testData);
 
         setTestDetails(testData);
 
@@ -220,8 +219,6 @@ const QuestionPages = () => {
             const sessionSection = sectionMarkingData[sectionId] || {};
             // const subjectData = sessionSection.subjectSelections?.[0];
             const subjectData = section.subjects?.[0];
-
-            console.log("the subjectData", subjectData);
 
             const payload = {
               Subject: subjectData?.subjectName || "",
@@ -238,10 +235,10 @@ const QuestionPages = () => {
                   ) || [],
             };
 
-            console.log("the test payload", payload);
+
 
             const result = await testServices.GetFilteredQuestions(payload);
-            console.log("all", result);
+
             return { sectionId: section._id, questions: result };
           })
         );
@@ -253,7 +250,6 @@ const QuestionPages = () => {
         });
 
         setSectionWiseQuestions(sectionWise);
-        console.log("sectiomwisee", sectionWise);
 
         setFilteredQuestions(sectionWise[testData.sections[0]._id]);
         setSelectedSection(testData.sections[0]);
@@ -419,8 +415,40 @@ const QuestionPages = () => {
       };
       sessionStorage.removeItem("pickedQuestions");
       sessionStorage.setItem("pickedQuestions", JSON.stringify(updated));
-
+      const testDetails = JSON.parse(sessionStorage.getItem("questionDetails") || "{}");
+      if (!testDetails[sectionId]) {
+        testDetails[sectionId] = {
+          sectionDetails: {
+            subject: selectedSection.subject,
+            chapter: selectedSection.chapter,
+            topic: selectedSection.topic,
+            questionType: selectedSection.questionType,
+            numberOfQuestions: selectedSection.numberOfQuestions,
+          },
+          pickedTopics: {},
+        };
+      }
+      
+      testDetails[sectionId].pickedTopics[trimmedTopicName] =
+        Object.keys(updatedSection[trimmedTopicName] || {}).map((qid) => {
+          const fullQuestion = (sectionWiseQuestions[sectionId] || []).find(q => q._id === qid);
+          return {
+            _id: fullQuestion._id,
+            English: fullQuestion.English,
+            OptionsEnglish: fullQuestion.OptionsEnglish,
+            Answer: fullQuestion.Answer,
+            Topic: fullQuestion.Topic,
+            Chapter: fullQuestion.Chapter,
+            Difficulty: fullQuestion.Difficulty,
+            Images: fullQuestion.Images || null,
+            SolutionSteps: fullQuestion.SolutionSteps || null
+          };
+        });
+      
+      sessionStorage.setItem("questionDetails", JSON.stringify(testDetails));
+      
       return updated;
+   
     });
   };
 
@@ -563,7 +591,7 @@ const QuestionPages = () => {
       );
       const updatedDetails = { ...prevDetails, ...selectedDetails };
 
-      sessionStorage.setItem("questionDetails", JSON.stringify(updatedDetails));
+      // sessionStorage.setItem("questionDetails", JSON.stringify(updatedDetails));
       navigate(`/questionReview/${formattedTestId}`);
     } catch (error) {
       console.error("Submission Error:", error);
@@ -790,9 +818,7 @@ const QuestionPages = () => {
                 const imageMatch = question.English?.match(
                   /\\includegraphics\[.*?\]{(.*?)}/
                 );
-                {
-                  console.log("the quersiotnss", question);
-                }
+           
                 const imageId = imageMatch ? imageMatch[1] : null;
 
                 const cleanQuestion = question.English?.replace(

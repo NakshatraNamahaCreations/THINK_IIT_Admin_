@@ -81,11 +81,10 @@ const ReviewPage = () => {
 
     if (storedQuestions) {
       const parsedQuestions = JSON.parse(storedQuestions);
-      console.log("Parsed Questions", parsedQuestions); // Log the questions to see their structure
       setSectionQuestions(parsedQuestions);
 
       if (Object.keys(parsedQuestions).length > 0) {
-        setActiveSection(Object.keys(parsedQuestions)[0]); // Optionally set the first section as active
+        setActiveSection(Object.keys(parsedQuestions)[0]); 
       }
     }
   }, []);
@@ -207,7 +206,7 @@ const ReviewPage = () => {
                           console.warn(`Missing image for ID: ${imageId}`)
                         )}
 
-                        {console.log(imageId)}
+
                       </Box>
 
                       <ul className="mt-2 space-y-1">

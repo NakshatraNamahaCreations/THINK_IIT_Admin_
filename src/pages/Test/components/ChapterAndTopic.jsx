@@ -6,7 +6,6 @@ const ChapterAndTopic = ({ chapters, subjectName, onTopicsSelected, preSelected 
   const [selectedTopics, setSelectedTopics] = useState([]);
   const [topicsByChapter, setTopicsByChapter] = useState({});
 
-  console.log("preSelected", preSelected);
   
   // Load from sessionStorage on mount
   useEffect(() => {

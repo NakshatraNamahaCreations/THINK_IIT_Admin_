@@ -376,10 +376,16 @@ const testServices = {
   },
 
   updateSectionMeta: async (testId, sectionId, payload) => {
-    return axios.put(
+    try {
+      const response = axios.put(
       `${config.BASE_URL_TEST}newTest/update-section-meta/${testId}/${sectionId}`,
-      payload
-    );
+      payload);
+      return response.data;
+    }
+    catch(error){
+      console.error("Error uploading file", error);
+      return { success: false, message: "Error udpating" };
+    }
   },
 
   // updateSectionDetails: (sectionId, data) => {
