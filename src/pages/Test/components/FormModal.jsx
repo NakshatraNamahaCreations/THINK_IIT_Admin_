@@ -10,6 +10,7 @@ import Papa from "papaparse";
 const FormModal = ({ isOpen, onClose }) => {
   const [selectionType, setselectionType] = useState("");
   const [uploadedFileName, setUploadedFileName] = useState("");
+  const [testId, setTestId] = useState(null);
 
   const navigate = useNavigate();
 
@@ -39,45 +40,6 @@ const FormModal = ({ isOpen, onClose }) => {
     }
   };
 
-  const handleUploadExcel = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    setUploadedFileName(file.name);
-
-    const reader = new FileReader();
-
-    reader.onload = (event) => {
-      const data = new Uint8Array(event.target.result);
-      const workbook = XLSX.read(data, { type: "array" });
-
-      const sheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[sheetName];
-
-      const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
-
-      const sectionNames = Object.keys(jsonData[0]);
-      const sections = sectionNames.map((section) => {
-        const questionBankQuestionId = jsonData
-          .map((row) => row[section])
-          .filter((id) => id !== "");
-        return {
-          sectionName: section,
-          questionBankQuestionId,
-        };
-      });
-
-      setFormData((prev) => ({
-        ...prev,
-        sections,
-      }));
-
-      toast.success("Excel file processed successfully!");
-    };
-
-    reader.readAsArrayBuffer(file);
-  };
-
   const handleDownloadSample = () => {
     const sampleData = [
       { section1: "q1", section2: "q2", section3: "q32" },
@@ -93,7 +55,6 @@ const FormModal = ({ isOpen, onClose }) => {
 
   const handleSubmit = async () => {
     try {
-      // Get the pattern based on selected testPattern
       const matchedPattern = testPatterns.find(
         (p) =>
           p.exam.trim().toLowerCase() ===
@@ -121,38 +82,137 @@ const FormModal = ({ isOpen, onClose }) => {
         questionBankQuestionId: [],
       }));
 
+  
       const payload = {
         testName: formData.testName,
         class: formData.className,
         testPattern: formData.testPattern,
-        selectionType: "SELECTION",
+        selectionType: "SELECTION",  // This can be dynamically set to "QID" or "SELECTION"
       };
-
-
+  
+      console.log("Payload:", payload);
+  
       const response = await testServices.createAssignment(payload);
+      console.log("API response:", response);
+      const testId = response.data._id;
+      if (!response || !response.data) {
+        throw new Error('Failed to create assignment, response data is missing.');
+      }
+  
+      const createdTestId = response.data._id;
+      console.log("createdTestId:", createdTestId);  // Log the createdTestId
+  
+      setTestId(createdTestId);
+  
       console.log(response);
       console.log(transformedSections);
-      const testId = response.data._id;
+    
 
-      const sectionMap = {};
-      transformedSections.forEach((section, index) => {
-        const sectionKey = `section-${index}`;
-        sectionMap[sectionKey] = { ...section, sectionKey };
-      });
-
-      localStorage.setItem(
-        `test-${testId}-sections`,
-        JSON.stringify(sectionMap)
-      );
-      localStorage.setItem("sectionCount", Object.keys(sectionMap).length);
-
-      navigate(`/test-selection/${testId}`);
+      // Check if the selectionType is "SELECTION", if so, skip the QID handling
+      if (selectionType === "QID") {
+        const sectionQIDsMap = JSON.parse(localStorage.getItem("extractedQIDs"));
+        console.log("sectionQIDsMap:", sectionQIDsMap);
+  
+        if (sectionQIDsMap && Object.keys(sectionQIDsMap).length > 0) {
+          const sectionsToSubmit = Object.entries(sectionQIDsMap).map(([sectionName, qidsArray]) => ({
+            sectionName: sectionName,
+            questionBankQuestionId: qidsArray.map((qidObj) => qidObj.qid),
+          }));
+  
+          console.log("Sections with QIDs to be submitted:", sectionsToSubmit);
+  
+          const res = await testServices.AddSectionDetails(createdTestId, sectionsToSubmit);
+          console.log("AddSectionDetails Response:", res);
+  
+          if (!res || !res.sections) {
+            console.error("Invalid response structure:", res);
+            return;
+          }
+  
+          console.log("Sections added successfully:", res.sections);
+  
+     
+          sessionStorage.setItem("Type", true);
+          
+        navigate(`/questionPage/${testId}`);
+        }
+      } else {
+        // Handle "Selection" case, where QIDs are not required
+        console.log("Proceeding with Selection-type logic");
+        const sectionMap = {};
+        transformedSections.forEach((section, index) => {
+          const sectionKey = `section-${index}`;
+          sectionMap[sectionKey] = { ...section, sectionKey };
+        });
+  
+        localStorage.setItem(
+          `test-${testId}-sections`,
+          JSON.stringify(sectionMap)
+        );
+        localStorage.setItem("sectionCount", Object.keys(sectionMap).length);
+  
+        navigate(`/test-selection/${testId}`);
+        sessionStorage.setItem("Type", false);
+      }
+  
     } catch (error) {
       toast.error("An error occurred while submitting the assignment.");
+      console.error("Error:", error);
     }
-
+  
     onClose();
   };
+  
+  
+
+  const handleUploadExcel = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+  
+    setUploadedFileName(file.name);
+  
+    const reader = new FileReader();
+  
+    reader.onload = async (event) => {
+      const data = new Uint8Array(event.target.result);
+      const workbook = XLSX.read(data, { type: "array" });
+  
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+  
+      // Convert the sheet to JSON
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+  
+      console.log("Excel Data:", jsonData);
+  
+      const sectionQIDsMap = {};
+  
+      jsonData.forEach((row) => {
+        Object.entries(row).forEach(([sectionKey, qid]) => {
+          if (!qid) return;
+  
+          // Associate the subject with the QID (if you have a predefined subject, like "Physics")
+          const subject = "Physics"; // Add your logic here if subject mapping is dynamic
+  
+          if (!sectionQIDsMap[sectionKey]) {
+            sectionQIDsMap[sectionKey] = [];
+          }
+  
+          sectionQIDsMap[sectionKey].push({ qid, subject });
+        });
+      });
+  
+      console.log("Parsed QIDs by section with subjects:", sectionQIDsMap);
+  
+      // Store the extracted QIDs and subjects in localStorage
+      localStorage.setItem("extractedQIDs", JSON.stringify(sectionQIDsMap));
+      toast.success("QIDs extracted section-wise!");
+    };
+  
+    reader.readAsArrayBuffer(file);
+  };
+  
+  
 
   if (!isOpen) return null;
 
@@ -179,7 +239,7 @@ const FormModal = ({ isOpen, onClose }) => {
           className="w-full border border-gray-300 px-4 py-2 rounded-md mb-3"
         >
           <option value="">Select Test Pattern</option>
-      
+
           {testPatterns.map((item, index) => (
             <option key={index} value={item.exam}>
               {item.exam}

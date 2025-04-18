@@ -387,7 +387,18 @@ const testServices = {
       return { success: false, message: "Error udpating" };
     }
   },
-
+  uploadQIDs: async (testId, qids) => {
+    try {
+      const response = await axios.post(
+        `${config.BASE_URL_TEST}newTest/upload-qid/${testId}`,
+        { qids }
+      );
+      return response.data; // Assuming the backend sends a success response
+    } catch (error) {
+      console.error("Error uploading QIDs", error);
+      throw error; // Throwing error to be handled in the frontend
+    }
+  },
   // updateSectionDetails: (sectionId, data) => {
   //   return axios.put(`/api/section/${sectionId}`, data);
   // },

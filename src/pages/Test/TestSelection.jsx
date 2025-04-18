@@ -60,7 +60,6 @@ const TestSelection = () => {
       return updated;
     });
   };
-  
 
   // useEffect(() => {
   //   const fromSession = JSON.parse(
@@ -142,7 +141,6 @@ const TestSelection = () => {
     }
   }, [activeSectionId]);
 
-
   useEffect(() => {
     const fetchSubject = async () => {
       try {
@@ -156,15 +154,13 @@ const TestSelection = () => {
     fetchSubject();
   }, [id]);
 
-
   useEffect(() => {
     const fetchTestDetails = async () => {
       try {
         const response = await testServices.getTestById(id);
         let testData = response.data;
-      setPreselected(testData.sections);
+        setPreselected(testData.sections);
 
-      
         if (!testData || !testData.sections || testData.sections.length === 0) {
           testData = testPatterns;
         }
@@ -309,21 +305,24 @@ const TestSelection = () => {
     }
   }, [id]);
 
-
-  const handleTopicsSelected = (subjectName, chapterList = [], topicList = []) => {
+  const handleTopicsSelected = (
+    subjectName,
+    chapterList = [],
+    topicList = []
+  ) => {
     const updatedSection = { ...sectionData[activeSectionId] };
     const updatedSubjects = [...(updatedSection.subjectSelections || [])];
-  
+
     const subjectIndex = updatedSubjects.findIndex(
       (s) => s.subjectName === subjectName
     );
-  
+
     if (subjectIndex !== -1) {
       const chapterWithTopics = chapterList.map((chapter) => {
         const topicsForChapter = topicList.filter(
           (t) => t.chapterName === chapter.chapterName
         );
-  
+
         return {
           chapterName: chapter.chapterName,
           topic: topicsForChapter.map((t) => ({
@@ -332,12 +331,12 @@ const TestSelection = () => {
           })),
         };
       });
-  
+
       updatedSubjects[subjectIndex] = {
         ...updatedSubjects[subjectIndex],
         chapter: chapterWithTopics,
       };
-  
+
       const updatedData = {
         ...sectionData,
         [activeSectionId]: {
@@ -345,12 +344,12 @@ const TestSelection = () => {
           subjectSelections: updatedSubjects,
         },
       };
-  
+
       sessionStorage.setItem("sectionMarkingData", JSON.stringify(updatedData));
       setSectionData(updatedData);
     }
   };
-  
+
   // const handleClassChange = (index, value) => {
   const handleClassChange = (value) => {
     // const updated = [...currentSection.classSelections];
@@ -411,7 +410,6 @@ const TestSelection = () => {
       sessionStorage.setItem("sectionMarkingData", JSON.stringify(updated));
     }
 
-
     // Update the selectedSubject to the chosen value (this ensures it's Math or the correct subject)
     setSelectedSubject(value);
 
@@ -470,72 +468,74 @@ const TestSelection = () => {
     syncToSessionStorage(updatedSectionData);
   };
 
-  console.log("selectedSubject",selectedSubject);
+  console.log("selectedSubject", selectedSubject);
 
-  const handleNextClick = async () => { 
+  const handleNextClick = async () => {
     try {
-      const sectionData = JSON.parse(sessionStorage.getItem("sectionMarkingData") || "{}");
+      const sectionData = JSON.parse(
+        sessionStorage.getItem("sectionMarkingData") || "{}"
+      );
       const selectedClass = sessionStorage.getItem("selectedClass");
-  
-     
-      const sectionsToSubmit = Object.values(sectionData).map((currentSection) => {
-        const sectionName = currentSection?.sectionName || "New Section";
-   
-        
-        const selectedSubObj = currentSection.subjectSelections.find(
-          (subject) =>
-            subject.subjectName === selectedSubject ||
-            subject.subjectName === selectedSubject?.subjectName
-        );
 
-  
-        if (!selectedSubObj) {
-          alert("Please select a subject before proceeding.");
-          return;
-        }
-  
-        return {
-          sectionName,
-          class: selectedClass,
-          questionType: currentSection.questionType || "SCQ",
-          marksPerQuestion: currentSection.positiveMarking,
-          negativeMarksPerWrongAnswer: currentSection.negativeMarking,
-          questionSelection: currentSection.selectionType || "Manual",
-          subjects: [
-            {
-              subjectName: selectedSubObj.subjectName,
-              subjectId: selectedSubObj._id || selectedSubObj.subjectId || "",
-              chapter: (selectedSubObj.chapter || []).map((chapter) => ({
-                chapterName: chapter.chapterName,
-                topic: (chapter.topic || []).map((topic) => ({
-                  topicName: topic.topicName,
-                  numberOfQuestions: topic.numberOfQuestions || 0,
+      const sectionsToSubmit = Object.values(sectionData).map(
+        (currentSection) => {
+          const sectionName = currentSection?.sectionName || "New Section";
+
+          const selectedSubObj = currentSection.subjectSelections.find(
+            (subject) =>
+              subject.subjectName === selectedSubject ||
+              subject.subjectName === selectedSubject?.subjectName
+          );
+
+          if (!selectedSubObj) {
+            alert("Please select a subject before proceeding.");
+            return;
+          }
+
+          return {
+            sectionName,
+            class: selectedClass,
+            questionType: currentSection.questionType || "SCQ",
+            marksPerQuestion: currentSection.positiveMarking,
+            negativeMarksPerWrongAnswer: currentSection.negativeMarking,
+            questionSelection: currentSection.selectionType || "Manual",
+            subjects: [
+              {
+                subjectName: selectedSubObj.subjectName,
+                subjectId: selectedSubObj._id || selectedSubObj.subjectId || "",
+                chapter: (selectedSubObj.chapter || []).map((chapter) => ({
+                  chapterName: chapter.chapterName,
+                  topic: (chapter.topic || []).map((topic) => ({
+                    topicName: topic.topicName,
+                    numberOfQuestions: topic.numberOfQuestions || 0,
+                  })),
                 })),
-              })),
-            },
-          ],
-        };
-      });
-  
+              },
+            ],
+          };
+        }
+      );
+
       // Filter out any undefined sections
       const validSections = sectionsToSubmit.filter((section) => section);
       console.log("Sending these sections:", validSections);
-  
-        
-        console.log("Sections to submit:", sectionsToSubmit);
-        
-console.log("the response response", sectionsToSubmit )
-      const response = await testServices.AddSectionDetails(id, sectionsToSubmit);
+
+      console.log("Sections to submit:", sectionsToSubmit);
+
+      console.log("the response response", sectionsToSubmit);
+      const response = await testServices.AddSectionDetails(
+        id,
+        sectionsToSubmit
+      );
       if (!response || !response.sections) {
         console.error("Invalid response structure:", response);
         return;
       }
       console.log("the response", response);
-      
-      
+
       const updatedSections = response.sections;
       console.log(updatedSections);
-      
+
       // Only update localStorage if this section is active
       // if (activeSections.includes(activeSectionId)) {
       //   const updatedSections = response;
@@ -595,7 +595,6 @@ console.log("the response response", sectionsToSubmit )
       //   }
 
       //   const autoPicked = autoPickResponse.data;
-
 
       //   const existing = JSON.parse(
       //     sessionStorage.getItem("AutoPickedQuestions") || "{}"
@@ -716,15 +715,15 @@ console.log("the response response", sectionsToSubmit )
             onClick={async () => {
               setSelectedSubject(subject.subjectName);
 
-                // const subjectObj = subjects.find((sub) => sub.subjectName === value);
-                // if (subjectObj) {
-                //   apiServices.fetchChapter(subjectObj._id).then((res) => {
-                //     setChapters((prev) => ({
-                //       ...prev,
-                //       [value]: res,
-                //     }));
-                //   });
-                // }
+              // const subjectObj = subjects.find((sub) => sub.subjectName === value);
+              // if (subjectObj) {
+              //   apiServices.fetchChapter(subjectObj._id).then((res) => {
+              //     setChapters((prev) => ({
+              //       ...prev,
+              //       [value]: res,
+              //     }));
+              //   });
+              // }
             }}
             endIcon={
               <IconButton
@@ -825,7 +824,6 @@ console.log("the response response", sectionsToSubmit )
               const subjectObj = subjects.find(
                 (s) => s.subjectName === selectedSubject
               );
-              
 
               if (subjectObj) {
                 const chapterData = await apiServices.fetchChapter(
@@ -835,9 +833,7 @@ console.log("the response response", sectionsToSubmit )
                   ...prev,
                   [subjectObj.subjectName]: chapterData,
                 }));
-
               }
-
 
               if (!subjectObj) {
                 console.warn("Subject not found in subject list");
@@ -848,7 +844,6 @@ console.log("the response response", sectionsToSubmit )
                 subjectObj._id
               );
 
-              
               const chapterWithTopics = await Promise.all(
                 chapterResponse.map(async (chapter) => {
                   try {
@@ -925,8 +920,10 @@ console.log("the response response", sectionsToSubmit )
           subjectName={selectedSubject}
           chapters={chapters[`${selectedSubject}`] || []}
           onTopicsSelected={handleTopicsSelected}
-          preSelected={testDetails?.sections?.find(sec => sec._id === activeSectionId)}
-          activeSectionId={activeSectionId} 
+          preSelected={testDetails?.sections?.find(
+            (sec) => sec._id === activeSectionId
+          )}
+          activeSectionId={activeSectionId}
         />
       )}
 
